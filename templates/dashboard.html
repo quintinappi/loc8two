@@ -1,0 +1,76 @@
+<!-- dashboard.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="padding: 2rem;">
+    <h2 style="margin-bottom: 2rem;">Dashboard</h2>
+    {% if is_admin %}
+        <h1>Admin Dashboard</h1>
+        <h2>All Users:</h2>
+        {% for user in users %}
+            <div>
+                <p>{{ user.email }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <h1>User Dashboard</h1>
+        <button id="clock-in">Clock In</button>
+        <button id="clock-out">Clock Out</button>
+    {% endif %}
+</div>
+<!-- The rest of your JavaScript code -->
+{% endblock %}
+<script>
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = '#333';
+        toast.style.color = '#fff';
+        toast.style.padding = '10px';
+        toast.style.borderRadius = '5px';
+        toast.style.textAlign = 'center';
+        toast.style.zIndex = '1000';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+    }
+
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+            // No user is signed in, redirect to the login page
+            window.location.href = '/login';
+        } else {
+            // User is signed in
+            // Show a welcome toast with the user's email
+            showToast('Welcome back, ' + user.email + '!');
+
+            // Get the ID token and make the authenticated request
+            user.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+                console.log('ID token:', idToken);  // Log the ID token
+                fetch('/dashboard', {
+                    headers: {
+                        'Authorization': 'Bearer ' + idToken
+                    }
+                }).then(response => {
+                    if (!response.ok) {
+                        console.log('Response status:', response.status);  // Log the response status
+                    }
+                    return response.json();
+                }).then(data => {
+                    // Handle the response data
+                    // You can show the dashboard content here
+                }).catch(error => {
+                    console.log('Fetch error:', error);  // Log the fetch error
+                });
+            }).catch(function(error) {
+                console.log('Get ID token error:', error);  // Log the get ID token error
+            });
+        }
+    });
+</script>
+
+{% endblock %}
